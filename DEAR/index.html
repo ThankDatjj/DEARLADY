@@ -205,7 +205,10 @@
       </div>
     </div>
 
-    <audio src="./sound/sound.mp3" autoplay></audio>
+<audio id="bgMusic" loop playsinline muted>
+  <source src="sound/sound.mp3" type="audio/mpeg">
+  Your browser does not support the audio element.
+</audio>
 
     <!-- JavaScript -->
     <script src="https://code.jquery.com/jquery-3.4.1.js" integrity="sha256-WpOohJOqMqqyKL9FccASB9O0KwACQJpFTUBLTYOVvVU=" crossorigin="anonymous"></script>
@@ -368,6 +371,58 @@ Tại vì em đẹp… nên quên mất đường`,
           }
         });
       });
+function startBackgroundMusic() {
+  const bgAudio = document.getElementById('bgMusic');
+  if (!bgAudio) return;
+
+  bgAudio.volume = 0.3;
+  bgAudio.muted = false; // đảm bảo không bị mute
+
+  // Thử phát, nếu fail thì thử lại 1 lần nữa sau 300ms
+  const tryPlay = () => {
+    bgAudio.play()
+      .then(() => {
+        console.log("Background music started OK!");
+      })
+      .catch(err => {
+        console.warn("Play failed:", err.message);
+        // Thử lại 1 lần nữa (đôi khi trình duyệt cần delay)
+        setTimeout(() => {
+          bgAudio.play().catch(e => {
+            console.warn("Retry also failed:", e.message);
+            // Nếu vẫn fail, có thể để im hoặc hiện thông báo nhẹ (không bắt buộc)
+          });
+        }, 300);
+      });
+  };
+
+  tryPlay();
+
+  // Một số trình duyệt mobile cần thêm sự kiện touchend/click để unlock audio
+  document.addEventListener('click', function unlockAudio() {
+    tryPlay();
+    document.removeEventListener('click', unlockAudio);
+  }, { once: true });
+}
+
+// Override firstQuestion để thêm play nhạc sau khi click "hihi"
+const originalFirstQuestion = firstQuestion;
+firstQuestion = function() {
+  $('.content').hide();
+  Swal.fire({
+    title: CONFIG.introTitle,
+    text: CONFIG.introDesc,
+    imageUrl: 'img/lookMe.jpg',
+    imageWidth: 300,
+    imageHeight: 300,
+    background: '#fff url("img/iput-bg.jpg")',
+    imageAlt: 'Custom image',
+    confirmButtonText: CONFIG.btnIntro
+  }).then(function(){
+    $('.content').show(200);
+    startBackgroundMusic();  // Phát nhạc ở đây
+  });
+};
     </script>
   </body>
 </html>
